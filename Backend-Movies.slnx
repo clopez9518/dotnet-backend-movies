@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Elementos de la solución/">
+    <File Path="docker-compose.yml" />
+  </Folder>
+  <Project Path="Backend-Movies.Test/Backend-Movies.Test.csproj" Id="41732c7d-3600-461c-b4e3-6601af5d7c73" />
+  <Project Path="Backend-Movies/Movies.Api.csproj" />
+  <Project Path="Movies.Application/Movies.Application.csproj" />
+  <Project Path="Movies.Domain/Movies.Domain.csproj" />
+  <Project Path="Movies.Infrastructure/Movies.Infrastructure.csproj" />
+</Solution>
