@@ -48,20 +48,26 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+
+using (var scope = app.Services.CreateScope())
 {
+    var services = scope.ServiceProvider;
 
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        var services = scope.ServiceProvider;
-
         var context = services.GetRequiredService<AppDBContext>();
         var seeder = services.GetRequiredService<DbInitializer>();
 
-        await context.Database.MigrateAsync(); // aplica migraciones
-        await seeder.SeedAsync(); // inserta datos
+        await context.Database.MigrateAsync();
+        await seeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error during migration/seed: {ex.Message}");
+        throw;
     }
 }
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
