@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Movies.Application.Common;
 using Movies.Application.DTOs.Auth;
 using Movies.Application.DTOs.User;
 using Movies.Application.Exceptions;
@@ -40,8 +41,16 @@ namespace Movies.Application.Services
             var accessToken = _jwtService.GenerateJwt(user);
             var refreshToken = _jwtService.GenerateRefreshToken();
 
+            //TODO: Hashear el token antes de guardarlo
+            var tokenHash = TokenHasher.HashToken(refreshToken.Token);
+
+            user.RefreshTokens.Add(new RefreshToken
+            {
+                Token = tokenHash,
+                Expires = refreshToken.Expires
+            });
+
             user.LastLoginAt = DateTime.UtcNow;
-            user.RefreshTokens.Add(refreshToken);
             await _userRepository.SaveChangesAsync();
 
             return new AuthResponseDto()
@@ -55,10 +64,11 @@ namespace Movies.Application.Services
 
         public async Task Logout(string refreshToken)
         {
-            var user = await _userRepository.GetByRefreshToken(refreshToken);
+            var tokenHash = TokenHasher.HashToken(refreshToken);
+            var user = await _userRepository.GetByRefreshToken(tokenHash);
             if (user == null) return;
 
-            var token = user.RefreshTokens.First(rt => rt.Token == refreshToken);
+            var token = user.RefreshTokens.First(rt => rt.Token == tokenHash);
 
             token.IsRevoked = true;
 
@@ -67,10 +77,11 @@ namespace Movies.Application.Services
 
         public async Task<AuthResponseDto> Refresh(string token)
         {
-            var user = await _userRepository.GetByRefreshToken(token) ?? 
+            var tokenHash = TokenHasher.HashToken(token);
+            var user = await _userRepository.GetByRefreshToken(tokenHash) ?? 
                 throw new UnauthorizedException("Invalid refresh token", "INVALID_REFRESH_TOKEN");
 
-            var refreshToken = user.RefreshTokens.First(rt => rt.Token == token);
+            var refreshToken = user.RefreshTokens.First(rt => rt.Token == tokenHash);
             var profileId = refreshToken.ProfileId;
 
             if (refreshToken.IsRevoked || refreshToken.Expires < DateTime.UtcNow) 
@@ -80,7 +91,14 @@ namespace Movies.Application.Services
 
             var newRefreshToken = _jwtService.GenerateRefreshToken();
             newRefreshToken.ProfileId = profileId;
-            user.RefreshTokens.Add(newRefreshToken);
+
+            
+            user.RefreshTokens.Add(new RefreshToken
+            {
+                Token = TokenHasher.HashToken(newRefreshToken.Token),
+                Expires = newRefreshToken.Expires,
+                ProfileId = profileId
+            });
 
             var newAccessToken = _jwtService.GenerateJwt(user, profileId);
             await _userRepository.SaveChangesAsync();
@@ -122,7 +140,13 @@ namespace Movies.Application.Services
 
             var accessToken = _jwtService.GenerateJwt(user);
             var refreshToken = _jwtService.GenerateRefreshToken();
-            user.RefreshTokens.Add(refreshToken);
+
+            user.RefreshTokens.Add(new RefreshToken
+            {
+                Token = TokenHasher.HashToken(refreshToken.Token),
+                Expires = refreshToken.Expires,
+                ProfileId = refreshToken.ProfileId
+            });
 
             await _userRepository.SaveChangesAsync();
             return new AuthResponseDto()
@@ -146,7 +170,13 @@ namespace Movies.Application.Services
             var refreshToken = _jwtService.GenerateRefreshToken();
             refreshToken.ProfileId = profileId;
 
-            user.RefreshTokens.Add(refreshToken);
+
+            user.RefreshTokens.Add(new RefreshToken
+            {
+                Token = TokenHasher.HashToken(refreshToken.Token),
+                Expires = refreshToken.Expires,
+                ProfileId = refreshToken.ProfileId
+            });
 
             await _userRepository.SaveChangesAsync();
 

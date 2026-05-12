@@ -36,6 +36,8 @@ namespace Movies.Infrastructure.Extensions
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ICookieService, CookieService>();
             services.AddScoped<IProfileService, ProfileService>();
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            services.AddHostedService<RefreshTokenCleanupService>();
             services.AddScoped<DbInitializer>();
 
             //HttpClient for TMDb API
@@ -73,6 +75,7 @@ namespace Movies.Infrastructure.Extensions
             services.AddScoped<IGenreRepository, GenreRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IProfileRepository, ProfileRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             //Mappers
             services.AddAutoMapper(cfg => { }, typeof(MovieProfile).Assembly);
